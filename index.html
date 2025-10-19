@@ -13,29 +13,54 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    header { padding: 12px 16px; text-align: center; color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
-    .sub { color:#9b9b9b; font-size: clamp(12px, 2.1vw, 15px); }
+    header {
+      padding: 12px 16px;
+      text-align: center;
+      color: #d6d6d6;
+      font-size: clamp(14px, 2.5vw, 18px);
+    }
 
     main {
-      position: relative; min-height: calc(100dvh - 96px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 72px;
+      position: relative;
+      min-height: calc(100dvh - 96px);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 8px 8px 72px;
     }
 
-    .clock { width: min(90vmin, 1200px); height: min(90vmin, 1200px); display: block; }
+    .clock {
+      width: min(90vmin, 1200px);
+      height: min(90vmin, 1200px);
+      display: block;
+    }
 
     footer {
-      position: fixed; left: 0; right: 0; bottom: 0; padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px;
-      text-align: center; color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px);
-      white-space: pre-line; background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0)); z-index: 10;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px;
+      text-align: center;
+      color: #bdbdbd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(12px, 2.3vw, 16px);
+      white-space: pre-line;
+      background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0));
+      z-index: 10;
     }
 
-    .finished { color: #8fe88f; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
+    .finished {
+      color: #8fe88f;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(12px, 2.2vw, 16px);
+      margin-top: 8px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" class="sub">(Starting Oct 19, 2025, 13:47 — Europe/Copenhagen)</span>
-    <div id="countdown" class="sub"></div>
+    <br><span id="hdrText" style="color:#9b9b9b">(Starting Oct 19, 2025, 14:03 — Europe/Copenhagen)</span>
   </header>
 
   <main>
@@ -59,42 +84,26 @@
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
 
   <script>
-    // Config: 1s recorded at 1e9 fps, played at 30 fps → ~33,333,333,333 ms (~385.8 days)
     const FPS_RECORD   = 1_000_000_000;
     const FPS_PLAYBACK = 30;
     const REAL_SECONDS = 1;
     const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Local start: 19/10-25 13:47 (Europe/Copenhagen). Use LOCAL constructor to avoid DST math mistakes.
-    const START = new Date(2025, 9, 19, 13,56, 0, 0).getTime(); // months are 0-based; 9 = October
+    // Local start: 19/10-25 14:03 (Europe/Copenhagen)
+    const START = new Date(2025, 9, 19, 14, 3, 0, 0).getTime(); // month 9 = October
     const END = START + DURATION;
 
     const hand  = document.getElementById('hand');
     const degEl = document.getElementById('deg');
     const finEl = document.getElementById('finished');
     const hdrEl = document.getElementById('hdrText');
-    const cdEl  = document.getElementById('countdown');
-
-    function fmtCountdown(ms){
-      if (ms <= 0) return '';
-      const s = Math.floor(ms/1000);
-      const d = Math.floor(s/86400);
-      const h = Math.floor((s%86400)/3600);
-      const m = Math.floor((s%3600)/60);
-      const sec = s%60;
-      return `Starts in ${d}d ${h}h ${m}m ${sec}s`;
-    }
 
     function frame() {
       const now = Date.now();
 
-      if (now < START) {
-        hdrEl.textContent = '(Starting Oct 19, 2025, 13:47 — Europe/Copenhagen)';
-        cdEl.textContent  = fmtCountdown(START - now);
-      } else {
-        hdrEl.textContent = '(Started Oct 19, 2025, 13:47 — Europe/Copenhagen)';
-        cdEl.textContent  = '';
-      }
+      hdrEl.textContent = (now < START)
+        ? '(Starting Oct 19, 2025, 14:03 — Europe/Copenhagen)'
+        : '(Started Oct 19, 2025, 14:03 — Europe/Copenhagen)';
 
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
@@ -104,12 +113,10 @@
 
       if (now >= END) {
         finEl.textContent =
-          'Finished! Duration 277,777 hours = 386 days.
-' +
-          'If I published the video on Blu-ray, it would be 121 TB —
-' +
+          'Finished! Duration 277,777 hours = 386 days.\n' +
+          'If I published the video on Blu-ray, it would be 121 TB —\n' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return; // stop loop
+        return;
       }
       requestAnimationFrame(frame);
     }
