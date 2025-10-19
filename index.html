@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One Second on a Clock — 1B FPS Playback (GMT)</title>
+  <title>One Second on a Clock — 1B FPS Playback (10s Delayed Start)</title>
   <style>
     html, body { height: 100%; }
     body {
@@ -13,7 +13,6 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    /* Simple, robust layout: header at top, clock centered, footer fixed */
     header {
       padding: 12px 16px;
       text-align: center;
@@ -23,14 +22,13 @@
 
     main {
       position: relative;
-      min-height: calc(100dvh - 96px); /* leave space for footer */
+      min-height: calc(100dvh - 96px);
       display: grid;
       place-items: center;
       overflow: hidden;
-      padding: 8px 8px 72px; /* avoid overlap with footer on very small screens */
+      padding: 8px 8px 72px;
     }
 
-    /* CLOCK: use widely supported units (no container queries) */
     .clock {
       width: min(90vmin, 1200px);
       height: min(90vmin, 1200px);
@@ -62,12 +60,11 @@
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" style="color:#9b9b9b">(Starting January 1, 2026, GMT)</span>
+    <br><span id="hdrText" style="color:#9b9b9b">(Starting in 10 seconds)</span>
   </header>
 
   <main>
-    <!-- Robust, scalable SVG clock -->
-    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (GMT)">
+    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (10s delay)">
       <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
       <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
       <g stroke="#cfcfcf">
@@ -79,9 +76,8 @@
         <line x1="200" y1="200" x2="200" y2="260" stroke="#d2d2d2" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
       </g>
       <circle cx="200" cy="200" r="5" fill="#e6e6e6"/>
+      <div id="finished" class="finished"></div>
     </svg>
-
-    <div id="finished" class="finished"></div>
   </main>
 
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
@@ -93,22 +89,18 @@
     const REAL_SECONDS = 1;
     const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Fixed start in GMT
-    const START = Date.UTC(2026, 0, 1, 0, 0, 0, 0); // Jan 1, 2026 00:00:00 GMT
+    // Start 10 seconds after page load
+    const START = Date.now() + 10_000;
     const END = START + DURATION;
 
     const hand  = document.getElementById('hand');
     const degEl = document.getElementById('deg');
-    const finEl = document.getElementById('finished');
     const hdrEl = document.getElementById('hdrText');
+    const finEl = document.getElementById('finished');
 
     function frame() {
       const now = Date.now();
-
-      // Header text: Starting → Started
-      hdrEl.textContent = (now < START)
-        ? '(Starting January 1, 2026, GMT)'
-        : '(Started January 1, 2026, GMT)';
+      hdrEl.textContent = (now < START) ? '(Starting in 10 seconds)' : '(Started)';
 
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
@@ -123,7 +115,7 @@
           'If I published the video on Blu-ray, it would be 121 TB —
 ' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return; // stop loop
+        return; // stop
       }
       requestAnimationFrame(frame);
     }
