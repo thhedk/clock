@@ -3,26 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One Second on a Clock — Finish Test (Last 10s)</title>
+  <title>One Second on a Clock — Finish Test (Robust 10s)</title>
   <style>
     html, body { height: 100%; }
     body { margin: 0; background: #0b0b0b; color: #e6e6e6; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
 
     header { padding: 12px 16px; text-align: center; color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
+    .sub   { color:#9b9b9b; font-size: clamp(12px, 2.1vw, 15px); }
 
-    main { position: relative; min-height: calc(100dvh - 96px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 72px; }
+    main { position: relative; min-height: calc(100dvh - 110px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 84px; }
 
     .clock { width: min(90vmin, 1200px); height: min(90vmin, 1200px); display: block; }
 
     footer { position: fixed; left: 0; right: 0; bottom: 0; padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px; text-align: center; color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px); white-space: pre-line; background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0)); z-index: 10; }
 
     .finished { color: #8fe88f; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
+    .debug { color:#b0b0b0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; margin-top: 6px; opacity:.8; }
   </style>
 </head>
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" style="color:#9b9b9b">(Finish test: showing only the last 10 seconds)</span>
+    <div id="hdrText" class="sub">(Finish test: last 10 seconds)</div>
+    <div id="countdown" class="sub"></div>
+    <div id="debugTop" class="debug"></div>
   </header>
 
   <main>
@@ -46,46 +50,67 @@
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
 
   <script>
-    // === Core math: 1s @1e9 fps played at 30 fps → ~33,333,333,333 ms (~385.8 days)
+    // Core math (unchanged)
     const FPS_RECORD   = 1_000_000_000;
     const FPS_PLAYBACK = 30;
     const REAL_SECONDS = 1;
-    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
+    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000; // ≈33,333,333,333 ms
 
-    // === Finish test ===
-    // Show only the final 10 seconds before END.
-    const TEST_WINDOW_MS = 10_000; // 10s remaining
-    const END   = Date.now() + TEST_WINDOW_MS; // finishes in ~10s from page load
-    const START = END - DURATION; // back-calc so we're in the very last sliver
+    // Finish test: only last 10 seconds visible
+    const TEST_WINDOW_MS = 10_000;
+    const END   = Date.now() + TEST_WINDOW_MS; // ends ~10s after load
+    const START = END - DURATION;               // back-compute start
 
+    // Elements
     const hand  = document.getElementById('hand');
     const degEl = document.getElementById('deg');
     const finEl = document.getElementById('finished');
     const hdrEl = document.getElementById('hdrText');
+    const cdEl  = document.getElementById('countdown');
+    const dbgEl = document.getElementById('debugTop');
 
-    function frame() {
-      const now = Date.now();
-      hdrEl.textContent = (now < END) ? '(Finish test: running — ends in ~10s)' : '(Finished)';
+    // Format helpers
+    const pad = (n)=> String(n).padStart(2,'0');
+    function fmtTime(ts){ const d=new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+    function fmtCountdown(ms){ if(ms<=0) return 'Ends now'; const s=Math.ceil(ms/1000); const m=Math.floor(s/60); const r=s%60; return `Ends in ${m}:${pad(r)}`; }
 
+    // Dual timers: rAF for smooth UI + setInterval as a safety net (background tabs throttle rAF)
+    let finished = false;
+
+    function update(now){
+      if(finished) return;
+      // Header + countdown + debug
+      hdrEl.textContent = (now < END) ? '(Finish test: running — last 10s)' : '(Finished)';
+      cdEl.textContent  = (now < END) ? fmtCountdown(END - now) : '';
+      dbgEl.textContent = `Now: ${fmtTime(now)}  |  End: ${fmtTime(END)}`;
+
+      // Progress + angle
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
-
       hand.setAttribute('transform', `rotate(${angle},200,200)`);
       degEl.textContent = `Angle: ${angle.toFixed(12)} of 6°`;
 
+      // Finish
       if (now >= END) {
+        finished = true;
         finEl.textContent =
           'Finished! Duration 277,777 hours = 386 days.
 ' +
           'If I published the video on Blu-ray, it would be 121 TB —
 ' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return; // stop loop
       }
-      requestAnimationFrame(frame);
     }
 
-    requestAnimationFrame(frame);
+    // Animation loop
+    function rafLoop(){ update(Date.now()); if(!finished) requestAnimationFrame(rafLoop); }
+    requestAnimationFrame(rafLoop);
+
+    // Safety interval (handles background tabs/mobile throttling)
+    const iv = setInterval(()=>{ update(Date.now()); if(finished) clearInterval(iv); }, 250);
+
+    // Final hard-stop guard (ensures finish even if all timers throttle)
+    setTimeout(()=>{ update(Date.now()); }, TEST_WINDOW_MS + 1200);
   </script>
 </body>
 </html>
