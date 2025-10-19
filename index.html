@@ -13,18 +13,34 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
     }
 
-    .viewport {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      grid-template-rows: auto 1fr auto auto;
-      min-height: 100dvh; height: 100dvh;
+    /* Simple, robust layout: header at top, clock centered, footer fixed */
+    header {
+      padding: 12px 16px;
+      text-align: center;
+      color: #d6d6d6;
+      font-size: clamp(14px, 2.5vw, 18px);
     }
 
-    header, footer {
+    main {
+      position: relative;
+      min-height: calc(100dvh - 96px); /* leave space for footer */
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 8px 8px 72px; /* avoid overlap with footer on very small screens */
+    }
+
+    /* CLOCK: use widely supported units (no container queries) */
+    .clock {
+      width: min(90vmin, 1200px);
+      height: min(90vmin, 1200px);
+      display: block;
+    }
+
+    footer {
       position: fixed;
       left: 0; right: 0; bottom: 0;
-      padding: calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
+      padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px;
       text-align: center;
       color: #bdbdbd;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -33,86 +49,81 @@
       background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0));
       z-index: 10;
     }
-    header { color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
-    footer { color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px); white-space: pre-line; }
 
-    main.middle { display: grid; place-items: center; overflow: hidden; container-type: size; }
-    .clock { width: min(90cqw, 90cqh); height: min(90cqw, 90cqh); max-width: 1200px; max-height: 1200px; }
-
-    .finished { color: #8fe88f; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
+    .finished {
+      color: #8fe88f;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: clamp(12px, 2.2vw, 16px);
+      margin-top: 8px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <div class="viewport">
-    <header>
-      One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-      <br><span id="hdrText" style="color:#9b9b9b">(Starting January 1, 2026, GMT)</span>
-    </header>
+  <header>
+    One second on a clock, filmed at 1 billion fps and played back at 30 fps.
+    <br><span id="hdrText" style="color:#9b9b9b">(Starting January 1, 2026, GMT)</span>
+  </header>
 
-    <main class="middle">
-      <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (GMT)">
-        <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
-        <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
+  <main>
+    <!-- Robust, scalable SVG clock -->
+    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (GMT)">
+      <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
+      <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
+      <g stroke="#cfcfcf">
+        <line x1="200" y1="36" x2="200" y2="56" stroke-width="2" />
+        <g transform="rotate(6,200,200)"><line x1="200" y1="36" x2="200" y2="56" stroke-width="2"/></g>
+      </g>
+      <g id="hand" transform="rotate(0,200,200)">
+        <line x1="200" y1="200" x2="200" y2="60" stroke="#ededed" stroke-width="3" stroke-linecap="round"/>
+        <line x1="200" y1="200" x2="200" y2="260" stroke="#d2d2d2" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+      </g>
+      <circle cx="200" cy="200" r="5" fill="#e6e6e6"/>
+    </svg>
 
-        <!-- Only 0° and 6° tick marks -->
-        <g stroke="#cfcfcf">
-          <line x1="200" y1="36" x2="200" y2="56" stroke-width="2"/>
-          <g transform="rotate(6,200,200)"><line x1="200" y1="36" x2="200" y2="56" stroke-width="2"/></g>
-        </g>
-
-        <g id="hand" transform="rotate(0,200,200)">
-          <line x1="200" y1="200" x2="200" y2="60" stroke="#ededed" stroke-width="3" stroke-linecap="round"/>
-          <line x1="200" y1="200" x2="200" y2="260" stroke="#d2d2d2" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
-        </g>
-        <circle cx="200" cy="200" r="5" fill="#e6e6e6"/>
-      </svg>
-    </main>
-
-    <footer id="deg">Angle: 0.000000000000 of 6°</footer>
     <div id="finished" class="finished"></div>
-  </div>
+  </main>
+
+  <footer id="deg">Angle: 0.000000000000 of 6°</footer>
 
   <script>
-    // === Configuration ===
+    // === Config: 1s recorded at 1e9 fps, played at 30 fps → ~33,333,333,333 ms (~385.8 days)
     const FPS_RECORD   = 1_000_000_000;
     const FPS_PLAYBACK = 30;
-    const REAL_SECONDS = 1; // 1 real second filmed
-    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000; // ≈ 33,333,333,333 ms (~385.8 days)
+    const REAL_SECONDS = 1;
+    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Start time in GMT
+    // Fixed start in GMT
     const START = Date.UTC(2026, 0, 1, 0, 0, 0, 0); // Jan 1, 2026 00:00:00 GMT
     const END = START + DURATION;
 
-    // Elements
-    const hand = document.getElementById("hand");
-    const degEl = document.getElementById("deg");
-    const finEl = document.getElementById("finished");
-    const hdrEl = document.getElementById("hdrText");
+    const hand  = document.getElementById('hand');
+    const degEl = document.getElementById('deg');
+    const finEl = document.getElementById('finished');
+    const hdrEl = document.getElementById('hdrText');
 
     function frame() {
       const now = Date.now();
 
-      // Header state text
-      if (now < START) {
-        hdrEl.textContent = "(Starting January 1, 2026, GMT)";
-      } else {
-        hdrEl.textContent = "(Started January 1, 2026, GMT)";
-      }
+      // Header text: Starting → Started
+      hdrEl.textContent = (now < START)
+        ? '(Starting January 1, 2026, GMT)'
+        : '(Started January 1, 2026, GMT)';
 
-      const progress = now < START ? 0 : now > END ? 1 : (now - START) / DURATION;
+      const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
 
-      hand.setAttribute("transform", `rotate(${angle},200,200)`);
+      hand.setAttribute('transform', `rotate(${angle},200,200)`);
       degEl.textContent = `Angle: ${angle.toFixed(12)} of 6°`;
 
       if (now >= END) {
         finEl.textContent =
-          "Finished! Duration 277,777 hours = 386 days.
-" +
-          "If I published the video on Blu-ray, it would be 121 TB —
-" +
-          "that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.";
-        return; // stop
+          'Finished! Duration 277,777 hours = 386 days.
+' +
+          'If I published the video on Blu-ray, it would be 121 TB —
+' +
+          'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
+        return; // stop loop
       }
       requestAnimationFrame(frame);
     }
