@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>One Second on a Clock — 1B FPS Playback (GMT)</title>
   <style>
     html, body { height: 100%; }
@@ -18,10 +18,21 @@
       inset: 0;
       display: grid;
       grid-template-rows: auto 1fr auto auto;
-      min-height: 100vh;
+      min-height: 100dvh; height: 100dvh;
     }
 
-    header, footer { padding: 12px 16px; text-align: center; }
+    header, footer {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      padding: calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
+      text-align: center;
+      color: #bdbdbd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(12px, 2.3vw, 16px);
+      white-space: pre-line;
+      background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0));
+      z-index: 10;
+    }
     header { color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
     footer { color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px); white-space: pre-line; }
 
@@ -35,7 +46,7 @@
   <div class="viewport">
     <header>
       One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-      <br><span id="hdrText" style="color:#9b9b9b">(Starting October 20, 2025, GMT)</span>
+      <br><span id="hdrText" style="color:#9b9b9b">(Starting January 1, 2026, GMT)</span>
     </header>
 
     <main class="middle">
@@ -83,9 +94,9 @@
 
       // Header state text
       if (now < START) {
-        hdrEl.textContent = "(Starting October 20, 2025, GMT)";
+        hdrEl.textContent = "(Starting January 1, 2026, GMT)";
       } else {
-        hdrEl.textContent = "(Started October 20, 2025, GMT)";
+        hdrEl.textContent = "(Started January 1, 2026, GMT)";
       }
 
       const progress = now < START ? 0 : now > END ? 1 : (now - START) / DURATION;
