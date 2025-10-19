@@ -3,68 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One Second on a Clock — 1B FPS Playback (Local Start)</title>
+  <title>One Second on a Clock — Finish Test (Last 10s)</title>
   <style>
     html, body { height: 100%; }
-    body {
-      margin: 0;
-      background: #0b0b0b;
-      color: #e6e6e6;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    }
+    body { margin: 0; background: #0b0b0b; color: #e6e6e6; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
 
-    header {
-      padding: 12px 16px;
-      text-align: center;
-      color: #d6d6d6;
-      font-size: clamp(14px, 2.5vw, 18px);
-    }
+    header { padding: 12px 16px; text-align: center; color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
 
-    main {
-      position: relative;
-      min-height: calc(100dvh - 96px);
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      padding: 8px 8px 72px;
-    }
+    main { position: relative; min-height: calc(100dvh - 96px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 72px; }
 
-    .clock {
-      width: min(90vmin, 1200px);
-      height: min(90vmin, 1200px);
-      display: block;
-    }
+    .clock { width: min(90vmin, 1200px); height: min(90vmin, 1200px); display: block; }
 
-    footer {
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px;
-      text-align: center;
-      color: #bdbdbd;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: clamp(12px, 2.3vw, 16px);
-      white-space: pre-line;
-      background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0));
-      z-index: 10;
-    }
+    footer { position: fixed; left: 0; right: 0; bottom: 0; padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px; text-align: center; color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px); white-space: pre-line; background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0)); z-index: 10; }
 
-    .finished {
-      color: #8fe88f;
-      font-family: ui-sans-serif, system-ui, sans-serif;
-      font-size: clamp(12px, 2.2vw, 16px);
-      margin-top: 8px;
-      text-align: center;
-    }
+    .finished { color: #8fe88f; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
   </style>
 </head>
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" style="color:#9b9b9b">(Starting Oct 19, 2025, 14:03 — Europe/Copenhagen)</span>
+    <br><span id="hdrText" style="color:#9b9b9b">(Finish test: showing only the last 10 seconds)</span>
   </header>
 
   <main>
-    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (fixed local start)">
+    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (finish test last 10s)">
       <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
       <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
       <g stroke="#cfcfcf">
@@ -84,14 +46,17 @@
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
 
   <script>
+    // === Core math: 1s @1e9 fps played at 30 fps → ~33,333,333,333 ms (~385.8 days)
     const FPS_RECORD   = 1_000_000_000;
     const FPS_PLAYBACK = 30;
     const REAL_SECONDS = 1;
     const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Local start: 19/10-25 14:03 (Europe/Copenhagen)
-    const START = new Date(2025, 9, 19, 14, 3, 0, 0).getTime(); // month 9 = October
-    const END = START + DURATION;
+    // === Finish test ===
+    // Show only the final 10 seconds before END.
+    const TEST_WINDOW_MS = 10_000; // 10s remaining
+    const END   = Date.now() + TEST_WINDOW_MS; // finishes in ~10s from page load
+    const START = END - DURATION; // back-calc so we're in the very last sliver
 
     const hand  = document.getElementById('hand');
     const degEl = document.getElementById('deg');
@@ -100,10 +65,7 @@
 
     function frame() {
       const now = Date.now();
-
-      hdrEl.textContent = (now < START)
-        ? '(Starting Oct 19, 2025, 14:03 — Europe/Copenhagen)'
-        : '(Started Oct 19, 2025, 14:03 — Europe/Copenhagen)';
+      hdrEl.textContent = (now < END) ? '(Finish test: running — ends in ~10s)' : '(Finished)';
 
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
@@ -113,10 +75,12 @@
 
       if (now >= END) {
         finEl.textContent =
-          'Finished! Duration 277,777 hours = 386 days.\n' +
-          'If I published the video on Blu-ray, it would be 121 TB —\n' +
+          'Finished! Duration 277,777 hours = 386 days.
+' +
+          'If I published the video on Blu-ray, it would be 121 TB —
+' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return;
+        return; // stop loop
       }
       requestAnimationFrame(frame);
     }
