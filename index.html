@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One Second on a Clock — 1B FPS Playback (10s Delayed Start)</title>
+  <title>One Second on a Clock — 1B FPS Playback (Local Start)</title>
   <style>
     html, body { height: 100%; }
     body {
@@ -60,11 +60,11 @@
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" style="color:#9b9b9b">(Starting in 10 seconds)</span>
+    <br><span id="hdrText" style="color:#9b9b9b">(Starting Oct 19, 2025, 13:47 — Europe/Copenhagen)</span>
   </header>
 
   <main>
-    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (10s delay)">
+    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (fixed local start)">
       <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
       <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
       <g stroke="#cfcfcf">
@@ -76,8 +76,9 @@
         <line x1="200" y1="200" x2="200" y2="260" stroke="#d2d2d2" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
       </g>
       <circle cx="200" cy="200" r="5" fill="#e6e6e6"/>
-      <div id="finished" class="finished"></div>
     </svg>
+
+    <div id="finished" class="finished"></div>
   </main>
 
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
@@ -89,18 +90,24 @@
     const REAL_SECONDS = 1;
     const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Start 10 seconds after page load
-    const START = Date.now() + 10_000;
+    // Fixed local start requested: 19/10-25 kl 13:47 (Europe/Copenhagen)
+    // Europe/Copenhagen on Oct 19, 2025 is CEST (UTC+2), so 13:47 local = 11:47 UTC
+    // Use a UTC timestamp so viewers in any timezone see the same start instant.
+    const START = Date.UTC(2025, 9, 19, 11, 47, 0, 0); // months are 0-based (9 = October)
     const END = START + DURATION;
 
     const hand  = document.getElementById('hand');
     const degEl = document.getElementById('deg');
-    const hdrEl = document.getElementById('hdrText');
     const finEl = document.getElementById('finished');
+    const hdrEl = document.getElementById('hdrText');
 
     function frame() {
       const now = Date.now();
-      hdrEl.textContent = (now < START) ? '(Starting in 10 seconds)' : '(Started)';
+
+      // Header text: Starting → Started (and remain)
+      hdrEl.textContent = (now < START)
+        ? '(Starting Oct 19, 2025, 13:47 — Europe/Copenhagen)'
+        : '(Started Oct 19, 2025, 13:47 — Europe/Copenhagen)';
 
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
@@ -115,7 +122,7 @@
           'If I published the video on Blu-ray, it would be 121 TB —
 ' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return; // stop
+        return; // stop loop
       }
       requestAnimationFrame(frame);
     }
