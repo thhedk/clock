@@ -3,34 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>One Second on a Clock — 1B FPS Playback (GMT start)</title>
+  <title>Clock Test — GMT 06:45 start with UTC clock</title>
   <style>
     html, body { height: 100%; }
     body { margin: 0; background: #0b0b0b; color: #e6e6e6; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
-
     header { padding: 12px 16px; text-align: center; color: #d6d6d6; font-size: clamp(14px, 2.5vw, 18px); }
-
-    main { position: relative; min-height: calc(100dvh - 96px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 72px; }
-
+    .sub { color:#9b9b9b; margin-top:4px; }
+    .utc { color:#aaa; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size: clamp(12px, 2.3vw, 15px); margin-top:4px; }
+    main { position: relative; min-height: calc(100dvh - 120px); display: grid; place-items: center; overflow: hidden; padding: 8px 8px 72px; }
     .clock { width: min(90vmin, 1200px); height: min(90vmin, 1200px); display: block; }
-
     footer { position: fixed; left: 0; right: 0; bottom: 0; padding: calc(10px + env(safe-area-inset-bottom)) 16px 12px 16px; text-align: center; color: #bdbdbd; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: clamp(12px, 2.3vw, 16px); white-space: pre-line; background: linear-gradient(to top, rgba(11,11,11,0.95), rgba(11,11,11,0.0)); z-index: 10; }
-
-    .finished { color: #8fe88f; font-family: ui-sans-serif, system-ui, sans-serif; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
+    .finished { color: #8fe88f; font-size: clamp(12px, 2.2vw, 16px); margin-top: 8px; text-align: center; }
   </style>
 </head>
 <body>
   <header>
     One second on a clock, filmed at 1 billion fps and played back at 30 fps.
-    <br><span id="hdrText" style="color:#9b9b9b">(Starting Oct 20, 2025, 00:00 GMT)</span>
+    <div id="hdrText" class="sub">(Starting Oct 20, 2025, 06:45 GMT)</div>
+    <div id="utcTime" class="utc"></div>
   </header>
 
   <main>
-    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-label="1B FPS playback clock (GMT start)">
+    <svg class="clock" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
       <circle cx="200" cy="200" r="195" fill="#0f0f0f" stroke="#1e1e1e" stroke-width="2"/>
       <circle cx="200" cy="200" r="150" fill="none" stroke="#2a2a2a" stroke-width="1" opacity="0.7"/>
       <g stroke="#cfcfcf">
-        <line x1="200" y1="36" x2="200" y2="56" stroke-width="2" />
+        <line x1="200" y1="36" x2="200" y2="56" stroke-width="2"/>
         <g transform="rotate(6,200,200)"><line x1="200" y1="36" x2="200" y2="56" stroke-width="2"/></g>
       </g>
       <g id="hand" transform="rotate(0,200,200)">
@@ -46,28 +44,33 @@
   <footer id="deg">Angle: 0.000000000000 of 6°</footer>
 
   <script>
-    // === Constants ===
-    const FPS_RECORD   = 1_000_000_000;
+    const FPS_RECORD = 1_000_000_000;
     const FPS_PLAYBACK = 30;
     const REAL_SECONDS = 1;
-    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000; // ≈33,333,333,333 ms (~385.8 days)
+    const DURATION = REAL_SECONDS * (FPS_RECORD / FPS_PLAYBACK) * 1000;
 
-    // Start: Oct 20, 2025, 00:00 GMT
-    const START = Date.UTC(2025, 9, 20, 0, 0, 0, 0); // month 9 = October
-    const END   = START + DURATION;
+    // Start Oct 20, 2025 06:45 GMT
+    const START = Date.UTC(2025, 9, 20, 6, 45, 0, 0);
+    const END = START + DURATION;
 
-    const hand  = document.getElementById('hand');
+    const hand = document.getElementById('hand');
     const degEl = document.getElementById('deg');
     const finEl = document.getElementById('finished');
     const hdrEl = document.getElementById('hdrText');
+    const utcEl = document.getElementById('utcTime');
+
+    function formatUTC(d) {
+      return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    }
 
     function frame() {
       const now = Date.now();
+      const nowUTC = new Date(now);
+      utcEl.textContent = 'Current UTC time: ' + formatUTC(nowUTC);
 
-      // Header text switches once we pass START
       hdrEl.textContent = (now < START)
-        ? '(Starting Oct 20, 2025, 00:00 GMT)'
-        : '(Started Oct 20, 2025, 00:00 GMT)';
+        ? '(Starting Oct 20, 2025, 06:45 GMT)'
+        : '(Started Oct 20, 2025, 06:45 GMT)';
 
       const progress = (now < START) ? 0 : (now > END) ? 1 : (now - START) / DURATION;
       const angle = 6 * progress;
@@ -77,12 +80,10 @@
 
       if (now >= END) {
         finEl.textContent =
-          'Finished! Duration 277,777 hours = 386 days.
-' +
-          'If I published the video on Blu-ray, it would be 121 TB —
-' +
+          'Finished! Duration 277,777 hours = 386 days.\n' +
+          'If I published the video on Blu-ray, it would be 121 TB —\n' +
           'that’s 2,420 Blu-ray discs, taking up about 34 meters on the old movie shelf.';
-        return; // stop loop
+        return;
       }
       requestAnimationFrame(frame);
     }
